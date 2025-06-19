@@ -39,6 +39,10 @@ const UserSchema = Schema(
             type: Schema.Types.ObjectId,
             ref: 'Performance'
         }],
+        problems: [{
+            type: Schema.Types.ObjectId,
+            ref: 'ProblemSolved'
+        }],
         currentRating: Number,
         maxRating: Number,
         currentRank: String,
