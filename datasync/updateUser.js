@@ -1,57 +1,49 @@
 import UserModel from "../models/userModel.js"
 import ContestModel from "../models/contestModel.js"
 import metadatamodel from '../models/metadatamodel.js'
-import { fetchUserRatingsHistory, fetchContestDetails, numberOfProblemsInContest } from "./userdatasync.js"
+import PerformanceModel from "../models/contestPerformance.js"
+import ProblemModel from "../models/problemModel.js"
+import { fetchUserRatingsHistory, fetchContestDetails, fetchContestProblems, fetchUserSubmissions } from "./userdatasync.js"
 
-const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+const updateProblems = async (problems) => {
+    await ProblemModel.insertMany(problems)
+}
 
 export const updateContests = async () => {
     try{
-        console.log("Function Called...")
         const data = await fetchContestDetails()
-        const lastStartAt = (await metadatamodel.find({ metadataid: "metadata"}))[0].lastContestStartTime
+        const lastStartAt = await metadatamodel.findOne({ metadataid: "metadata"}).lastContestStartTime
 
         let max = lastStartAt
-        let errorCount = 1
-        let itemCount = 1
 
         console.log("lastStartAt: ", lastStartAt)
 
         for(const item of data){
             try{
                 if(item.startTimeSeconds > lastStartAt){
-                    console.log(`Processing contest ${item.id}: ${item.name}...`) // ADD THIS
-
                     max = Math.max(max, item.startTimeSeconds)
 
-                    await wait(600)
-
-                    const problemCount = await numberOfProblemsInContest(Number(item.id)) // ADD THIS LOGIC
-                    console.log(`Fetched problem count: ${problemCount}`) // ADD THIS
+                    const problems = await fetchContestProblems(Number(item.id))
 
                     await ContestModel.create({
                         contestName: item.name,
                         contestId: item.id,
                         startTime: item.startTimeSeconds,
-                        numberOfProblems: problemCount
+                        numberOfProblems: problems.length
                     })
-
-                    console.log(`${itemCount} Item Created`)
-                    itemCount = itemCount + 1
+                    
+                    await updateProblems(problems)
                 }
             }
             catch(err){
-                console.log(`Error ${errorCount}`)
-                errorCount = errorCount + 1
+                console.log(err)
             }
         }
 
-        if(item >= 1000){
-            await metadatamodel.findOneAndUpdate(
-                { metadataid: 'metadata' },
-                { lastContestStartTime: max }
-            )
-        }
+        await metadatamodel.findOneAndUpdate(
+            { metadataid: 'metadata' },
+            { lastContestStartTime: max }
+        )
     }
     catch(err){
         console.log("error in updateContests")
@@ -59,32 +51,82 @@ export const updateContests = async () => {
     }
 }
 
-export const updateUserHistory = async (userhandle) => {
+const numberOfUnsolvedProblems = async (userhandle, id) => {
+    const submissions = await fetchUserSubmissions(userhandle, id)
+    const mySet = new Set()
+
+    for(const item of submissions){
+        if(item.verdict !== 'OK'){
+            mySet.add(item.problem.index)
+        }
+    }
+
+    return mySet.size
+}
+
+export const updateUserHistory = async (userhandle, lastRatingUpdateAt, buffer) => {
     try{
         const data = await fetchUserRatingsHistory(userhandle)
-        const updates = {}
+        const updatesArray = []
         let updateTime = lastRatingUpdateAt
 
         for(const item of data){
             if(lastRatingUpdateAt < item.ratingUpdateTimeSeconds){
                 updateTime = Math.max(updateTime, item.ratingUpdateTimeSeconds)
+                if(!buffer[item.contestId]){
+                    const contestObj = await ContestModel.findOne({ contestId: item.contestId })
+                    if (!contestObj) continue;
+                    buffer[item.contestId] = {
+                        ObjId: contestObj._id,
+                    }                   
+                }
 
+                const { ObjId } = buffer[item.contestId]
+                const unsolvedPrbs = await numberOfUnsolvedProblems(userhandle, item.contestId)
 
-                const contest = new ContestModel({
-                    contestName: item.contestName,
-                    contestId: item.contestId,
-                    startTime,
-                    rank,
-                    oldRating,
-                    newRating,
-                    ratingchange
+                const PerformanceObj = await PerformanceModel.create({
+                    contest: ObjId,
+                    numberOfUnsolvedProblems: unsolvedPrbs,
+                    rank: item.rank,
+                    newRating: item.newRating,
+                    ratingchange: item.newRating - item.oldRating
                 })
+
+                updatesArray.push(PerformanceObj._id)
             }
+        }
+
+        if (updatesArray.length > 0) {
+            await UserModel.findOneAndUpdate(
+                { cfHandle: userhandle },
+                {
+                    $push: {
+                        contests: { $each: updatesArray }
+                    },
+                    $set: {
+                        lastRatingUpdateTime: updateTime
+                    }
+                }
+            );
         }
     }
     catch(err){
         console.log('Error in fn: datasync/updateUserHistory')
         console.log(err)
         throw err
+    }
+}
+
+export const updateUsersHistory = async () => {
+    try{
+        const users = await UserModel.find().select("cfHandle lastRatingUpdateTime")
+        const buffer = {}
+        for(const user of users){
+            await updateUserHistory(user.cfHandle, user.lastRatingUpdateTime, buffer)
+        }
+    }
+    catch(err){
+        console.log("Error in updateUsersHistory")
+        console.log(err)
     }
 }

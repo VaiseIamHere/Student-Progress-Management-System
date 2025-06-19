@@ -15,6 +15,10 @@ const ContestSchema = Schema(
             type: Date,
             required: true
         },
+        // problems: [{
+        //     type: Schema.Types.ObjectId,
+        //     ref: 'Problem'
+        // }],
         numberOfProblems: Number
     }
 )

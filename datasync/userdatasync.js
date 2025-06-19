@@ -4,8 +4,7 @@ const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
 export const fetchUserData = async (userhandle) => {
     try{
-
-        await wait(1000)
+        await wait(500)
         const r = await axios.get(
             'https://codeforces.com/api/user.info',
             {
@@ -31,7 +30,7 @@ export const fetchUserData = async (userhandle) => {
 
 export const fetchUserRatingsHistory = async (userhandle) => {
     try{
-        await wait(1000)
+        await wait(500)
         const r = await axios.get(
             'https://codeforces.com/api/user.rating',
             {
@@ -57,10 +56,8 @@ export const fetchUserRatingsHistory = async (userhandle) => {
 
 export const fetchContestDetails = async () => {
     try{
-        await wait(1000)
-        console.log('Request Sent...')
+        await wait(500)
         const r = await axios.get('https://codeforces.com/api/contest.list')
-        console.log('Response Received...')
 
         if(r.data.status === 'OK'){
             return r.data.result
@@ -76,7 +73,7 @@ export const fetchContestDetails = async () => {
     }
 }
 
-export const numberOfProblemsInContest = async (id) => {
+export const fetchContestProblems = async (id) => {
     try{
         await wait(500)
         const r = await axios.get(
@@ -91,14 +88,42 @@ export const numberOfProblemsInContest = async (id) => {
         )
 
         if(r.data.status === 'OK'){
-            return r.data.result.problems.length
+            return r.data.result.problems
         }
         else if(r.data.status === 'FAILED'){
             throw new Error(r.data.comment)
         }
     }
     catch(err){
-        console.log("Error in fn: datasync/numberOfProblemsInContest")
+        console.log("Error in fn: datasync/fetchContestProblems")
+        throw err
+    }
+}
+
+export const fetchUserSubmissions = async (userhandle, id) => {
+    try{
+        await wait(500)
+        const r = await axios.get(
+            'https://codeforces.com/api/contest.status',
+            {
+                params: {
+                    handle: userhandle,
+                    contestId: id,
+                    from: 1
+                }
+            }
+        )
+
+        if(r.data.status === 'OK'){
+            return r.data.result
+        }
+        else if(r.data.status === 'FAILED'){
+            throw new Error(r.data.comment)
+        }
+    }
+    catch(err){
+        console.log("Error in fn: datasync/fetchUserSubmissions")
+        console.log(err)
         throw err
     }
 }

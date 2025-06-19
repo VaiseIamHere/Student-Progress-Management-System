@@ -47,6 +47,10 @@ const UserSchema = Schema(
         maxRating: Number,
         currentRank: String,
         maxRank: String,
+        lastRatingUpdateTime: {
+            type: Number,
+            default: 0
+        },
         admin: {
             type: Boolean,
             default: false
