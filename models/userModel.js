@@ -1,6 +1,7 @@
-import mongoose from "mongoose"
+import { Schema, model } from "mongoose"
+import { updateUserData } from "../middlewares/usermodelmiddleware.js"
 
-const UserSchema = mongoose.Schema(
+const UserSchema = Schema(
     {
         username: {
             type: String,
@@ -30,29 +31,31 @@ const UserSchema = mongoose.Schema(
             type: String,
             required: true
         },
-        cfHandle: String,
-        currentRating: String,
-        maxRating: String
+        cfHandle: {
+            type: String,
+            unique: true
+        },
+        contests: [{
+            type: Schema.Types.ObjectId,
+            ref: 'Performance'
+        }],
+        currentRating: Number,
+        maxRating: Number,
+        currentRank: String,
+        maxRank: String,
+        admin: {
+            type: Boolean,
+            default: false
+        }
     },
     {
         timestamps: true
     }
 )
 
-// UserSchema.post('save', async function (doc, next) {
-//     if (doc.cfHandle) {
-//         console.log(`cfHandle set to ${doc.cfHandle}`);
-//     }
-//     next();
-// });
+UserSchema.pre('save', updateUserData)
+UserSchema.pre('findOneAndUpdate', updateUserData)
 
-// UserSchema.post('findOneAndUpdate', async function (doc, next) {
-//     if (doc.cfHandle) {
-//         console.log(`cfHandle set to ${doc.cfHandle}`);
-//     }
-//     next();
-// });
-
-const UserModel = mongoose.model('User', UserSchema)
+const UserModel = model('User', UserSchema)
 
 export default UserModel

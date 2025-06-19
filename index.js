@@ -1,5 +1,9 @@
 import express from 'express'
 import dotenv from 'dotenv'
+
+import { updateContests } from './datasync/updateUser.js'
+import { connectDB } from './connect.js'
+
 import router from './routes/userRoutes.js'
 
 dotenv.config()
@@ -13,7 +17,4 @@ app.get("/", (req, res) => {
     return res.send("App started Listening...")
 })
 
-
-app.listen(process.env.PORT, () => {
-    console.log(`App started listen at: http://localhost:${process.env.PORT}`)
-})
+connectDB(app)

@@ -1,5 +1,5 @@
 import UserModel from "../models/userModel.js"
-import { Parser } from "json-2-csv"
+import { json2csv } from "json-2-csv"
 
 export const createUsers = async (req, res) => {
     
@@ -9,7 +9,6 @@ export const createUsers = async (req, res) => {
 
 export const downloadUsers = async (req, res) => {
     try{
-        const json2csv = new Parser()
         const users = await UserModel.find({}).select('-password').lean()
 
         const csv = json2csv(users)

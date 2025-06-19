@@ -1,6 +1,6 @@
-import mongoose from "mongoose"
+import { Schema, model } from "mongoose"
 
-const ContestSchema = mongoose.Schema(
+const ContestSchema = Schema(
     {
         contestName: {
             type: String,
@@ -8,21 +8,17 @@ const ContestSchema = mongoose.Schema(
         },
         contestId: {
             type: Number,
-            required: true
+            required: true,
+            unique: true
         },
         startTime: {
             type: Date,
             required: true
         },
-        difficulty: {
-            type: Number,
-            required: true
-        },
-        oldRating: Number,
-        newRating: Number
+        numberOfProblems: Number
     }
 )
 
-const ContestModel = mongoose.model("Contest", ContestSchema)
+const ContestModel = model("Contest", ContestSchema)
 
 export default ContestModel
