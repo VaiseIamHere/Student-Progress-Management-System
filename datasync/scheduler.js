@@ -6,4 +6,7 @@ const tasks = async () => {
     await updateUsersHistory()
 }
 
-cron.schedule("0 2 * * *", tasks)
+export const scheduler = () => {
+    console.log("Tasks Scheduled..")
+    cron.schedule("0 2 * * *", tasks)
+}

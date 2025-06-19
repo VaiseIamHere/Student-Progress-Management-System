@@ -2,8 +2,10 @@ import express from 'express'
 import dotenv from 'dotenv'
 import router from './routes/userRoutes.js'
 import { connectDB } from './connect.js'
+import { scheduler } from './datasync/scheduler.js'
 
 dotenv.config()
+scheduler()
 
 const app = express()
 app.use(express.json())
