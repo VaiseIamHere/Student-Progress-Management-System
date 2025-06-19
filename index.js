@@ -1,10 +1,7 @@
 import express from 'express'
 import dotenv from 'dotenv'
-
-import { updateContests } from './datasync/updateUser.js'
-import { connectDB } from './connect.js'
-
 import router from './routes/userRoutes.js'
+import { connectDB } from './connect.js'
 
 dotenv.config()
 

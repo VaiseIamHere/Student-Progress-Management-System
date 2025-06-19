@@ -6,7 +6,8 @@ const UserSchema = Schema(
         username: {
             type: String,
             unique: [true, 'Username already exists...'],
-            required: [true, 'Username required...']
+            required: [true, 'Username required...'],
+            immutable: true
         },
         email: {
             type: String,
@@ -15,7 +16,8 @@ const UserSchema = Schema(
             validate: {
                 validator: (v) => validator.isEmail(v),
                 message: props => `${props.value} is not a valid email!`
-            }
+            },
+            immutable: true
         },
         phoneNumber: {
             type: String,
@@ -29,7 +31,8 @@ const UserSchema = Schema(
         },
         password: {
             type: String,
-            required: true
+            required: true,
+            select: false
         },
         cfHandle: {
             type: String,

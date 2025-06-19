@@ -34,17 +34,17 @@ export const registerUser = async (req, res) => {
 
 export const loginUser = async (req, res) => {
     try{
-        const temp = await user.find({'username': req.body.username})
-        if(temp.length == 0){
+        const temp = await user.findOne({'username': req.body.username})
+        if(!temp){
             return res.status(400).send('Cannot find user !!')
         }
-        if(await bcryptjs.compare(req.body.password, temp[0].password)){
+        if(await bcryptjs.compare(req.body.password, temp.password)){
             const payload = {
                 'username': req.body.username
             }
             const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET)
             const mail = {
-                'emailId': temp[0].emailId,
+                'emailId': temp.emailId,
                 'subject': 'Logged In sucessfully',
                 'body': 'You logged in to Vaibhav\'s website'
             }
